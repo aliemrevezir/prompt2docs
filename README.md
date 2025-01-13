@@ -137,6 +137,42 @@ prompt2docs/
 - [ ] Auto-detection of chat interfaces
 - [ ] Export history tracking
 
+## TODO
+### High Priority
+- [ ] Add PDF export functionality
+- [ ] Improve XPath selectors for better content detection
+- [ ] Add error handling for failed content extraction
+- [ ] Create proper extension icons and branding
+- [ ] Add support for different chat interfaces
+
+### Features
+- [ ] Add support for custom templates in Markdown export
+- [ ] Implement settings page for customization
+- [ ] Add batch export functionality
+- [ ] Create export history viewer
+- [ ] Add search functionality in exported content
+
+### Technical Improvements
+- [ ] Implement proper TypeScript support
+- [ ] Add unit tests for core functionality
+- [ ] Improve code documentation
+- [ ] Set up CI/CD pipeline
+- [ ] Add code quality checks (ESLint, Prettier)
+
+### Documentation
+- [ ] Create detailed API documentation
+- [ ] Add troubleshooting guide
+- [ ] Create user guide with examples
+- [ ] Add contribution guidelines
+- [ ] Create changelog
+
+### Testing
+- [ ] Add end-to-end tests
+- [ ] Test on different chat platforms
+- [ ] Cross-browser compatibility testing
+- [ ] Performance testing
+- [ ] Security audit
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

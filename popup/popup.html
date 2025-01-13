@@ -29,8 +29,158 @@
     </main>
 
     <footer>
-      <p>Made with ❤️ by Prompt2Docs Team</p>
+      <p>Made with ❤️ by <a href="https://www.wezirim.com" target="_blank" rel="noopener noreferrer">Prompt2Docs Team</a></p>
     </footer>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Customize Settings</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-group">
+          <h3>Export Content</h3>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="include-prompts" checked>
+              Include prompts
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="include-responses" checked>
+              Include responses
+            </label>
+          </div>
+          <p class="helper-text">Select which parts of the conversation to export</p>
+        </div>
+
+        <div class="setting-group">
+          <h3>Content Settings</h3>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="include-metadata" checked>
+              Include metadata
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="include-timestamps" checked>
+              Include timestamps
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="include-conversation-numbers" checked>
+              Include conversation numbers
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <h3>Markdown Formatting</h3>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="use-code-blocks" checked>
+              Use code blocks for content
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="add-separators" checked>
+              Add separators between conversations
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="use-emojis" checked>
+              Use emojis in headers (👤, 🤖)
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <h3>Export Options</h3>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="auto-filename" checked>
+              Auto-generate filenames with timestamp
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="pretty-print-json" checked>
+              Pretty print JSON output
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="include-line-breaks" checked>
+              Preserve line breaks in content
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <h3>Display Settings</h3>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="use-custom-labels" checked>
+              Use custom labels
+            </label>
+          </div>
+          <div class="setting-item custom-label-inputs" id="custom-label-section">
+            <div class="label-input">
+              <label>User Label:</label>
+              <input type="text" id="user-label" value="User" placeholder="e.g., Question">
+            </div>
+            <div class="label-input">
+              <label>Assistant Label:</label>
+              <input type="text" id="assistant-label" value="Assistant" placeholder="e.g., Answer">
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <h3>XPath Settings</h3>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="use-custom-xpath" checked>
+              Use custom XPath selectors
+            </label>
+          </div>
+          <div class="setting-item xpath-inputs" id="xpath-section">
+            <div class="label-input">
+              <label>User Prompt XPath:</label>
+              <input type="text" id="prompt-xpath" placeholder="Enter XPath for user prompts">
+              <small class="helper-text">XPath to locate user prompts in the chat</small>
+            </div>
+            <div class="label-input">
+              <label>Assistant Response XPath:</label>
+              <input type="text" id="response-xpath" placeholder="Enter XPath for assistant responses">
+              <small class="helper-text">XPath to locate assistant responses in the chat</small>
+            </div>
+            <button id="test-xpath" class="secondary-button">Test XPath Selectors</button>
+          </div>
+        </div>
+
+        <!-- Platform Selection -->
+        <div class="setting-group">
+          <h3>Platform</h3>
+          <select id="platform-select">
+            <option value="chatgpt">ChatGPT</option>
+          </select>
+          <p class="helper-text">Currently supports ChatGPT only</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="reset-settings" class="secondary-button">Reset to Default</button>
+        <button id="save-settings" class="primary-button">Save Settings</button>
+      </div>
+    </div>
   </div>
 
   <script src="popup.js"></script>

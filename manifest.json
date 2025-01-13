@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
     "name": "Prompt2Docs",
-    "version": "1.0",
-    "description": "Export your prompts and responses into a PDF effortlessly.",
+    "version": "1.0.0",
+    "description": "Export your chat prompts and responses into JSON and Markdown formats.",
     "permissions": [
         "activeTab",
         "downloads",
