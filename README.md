@@ -182,3 +182,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with Firefox WebExtensions API
 - Uses jsPDF for future PDF export functionality
 - Inspired by the need for better chat data portability 
+
+
+Case 1(Response include image):
+/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[1]/div/div/div/div/div/div/div/div
+/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[2]/div/div //It contains image and response together.
+
+/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[2]/div/div/div[2]/div/div[1]/div[1]/div/div/div/div[2]/img //Image's XPATH
+/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[2]/div/div/div[2]/div/div[1]/div[2]/div/div //Response XPATH
+
+
+/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[5]/div/div/div/div/div/div/div/div/div[1] //Prompt
+/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[7]/div/div/div/div/div/div/div/div/div[1] //Next Prompt
+/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[8]/div/div/div[2]/div/div[1]/div[2]/div/div //response
+/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article[10]/div/div/div[2]/div/div[1]/div/div/div //next response
+
+
+These are some examples for xpath

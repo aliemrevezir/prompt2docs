@@ -23,14 +23,6 @@ const DEFAULT_SETTINGS = {
     includeResponses: true
 };
 
-// Platform-specific XPath patterns
-const PLATFORM_PATTERNS = {
-    chatgpt: {
-        prompt: "/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article/div/div/div/div/div/div/div/div/div[1]",
-        response: "/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article/div/div/div[2]/div/div[1]/div/div/div"
-    }
-};
-
 // Function to handle button state
 function setButtonState(button, isLoading) {
     const originalText = button.getAttribute('data-original-text') || button.textContent;
@@ -272,7 +264,6 @@ function handleExport(type) {
     const button = document.getElementById(`export-${type}`);
     setButtonState(button, true);
 
-    // First get the settings
     const storage = browserAPI.storage.local || browserAPI.storage.sync;
     storage.get('settings', (settingsData) => {
         const settings = { ...DEFAULT_SETTINGS, ...settingsData.settings };
@@ -291,53 +282,45 @@ function handleExport(type) {
             }
         }
 
-        // Then get the chat data with custom XPath if enabled
-        const message = {
-            action: "getChatData"
-        };
+        // Then get the chat data
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: "getChatData",
+                settings: settings
+            }, (response) => {
+                setButtonState(button, false);
 
-        if (settings.useCustomXPath && settings.promptXPath && settings.responseXPath) {
-            message.promptXPath = settings.promptXPath;
-            message.responseXPath = settings.responseXPath;
-        }
-
-        chrome.runtime.sendMessage(message, (response) => {
-            setButtonState(button, false);
-
-            if (chrome.runtime.lastError) {
-                console.error("Runtime error:", chrome.runtime.lastError);
-                showNotification("Error communicating with the extension. Please refresh the page.", 'error');
-                return;
-            }
-
-            if (!response) {
-                showNotification("No response from the page. Please refresh and try again.", 'error');
-                return;
-            }
-
-            try {
-                if (type === 'md') {
-                    if (!response.metadata || !response.prompts) {
-                        throw new Error("Invalid data format");
-                    }
-                    const markdown = convertToMarkdown(response, settings);
-                    downloadMarkdown(markdown, settings);
-                } else if (type === 'json') {
-                    downloadJSON(response, settings);
+                if (chrome.runtime.lastError) {
+                    console.error("Runtime error:", chrome.runtime.lastError);
+                    showNotification("Error communicating with the extension. Please refresh the page.", 'error');
+                    return;
                 }
-                showNotification(`Successfully exported as ${type.toUpperCase()}!`, 'success');
-            } catch (error) {
-                console.error(`Error exporting as ${type}:`, error);
-                console.error("Response data:", response);
-                showNotification(`Failed to export as ${type}. Please try again.`, 'error');
-            }
+
+                if (!response) {
+                    showNotification("No response from the page. Please refresh and try again.", 'error');
+                    return;
+                }
+
+                try {
+                    if (type === 'md') {
+                        if (!response.metadata || !response.prompts) {
+                            throw new Error("Invalid data format");
+                        }
+                        const markdown = convertToMarkdown(response, settings);
+                        downloadMarkdown(markdown, settings);
+                    } else if (type === 'json') {
+                        downloadJSON(response, settings);
+                    }
+                    showNotification(`Successfully exported as ${type.toUpperCase()}!`, 'success');
+                } catch (error) {
+                    console.error(`Error exporting as ${type}:`, error);
+                    console.error("Response data:", response);
+                    showNotification(`Failed to export as ${type}. Please try again.`, 'error');
+                }
+            });
         });
     });
 }
-
-// Export button click handlers
-document.getElementById("export-json").addEventListener("click", () => handleExport('json'));
-document.getElementById("export-md").addEventListener("click", () => handleExport('md'));
 
 // Settings modal functionality
 const modal = document.getElementById('settings-modal');
@@ -522,7 +505,7 @@ modal.addEventListener('click', (e) => {
     }
 });
 
-// Get XPath patterns based on platform
+// Function to get XPath patterns based on platform
 function getXPathPatterns(settings) {
     if (settings.useCustomXPath) {
         return {
@@ -531,7 +514,22 @@ function getXPathPatterns(settings) {
         };
     }
     
-    return PLATFORM_PATTERNS[settings.platform] || PLATFORM_PATTERNS.chatgpt;
+    // Generate dynamic patterns for first 20 articles (adjust number as needed)
+    const patterns = {
+        prompts: [],
+        responses: [],
+        imageResponses: [],
+        codeResponses: []
+    };
+    
+    for (let i = 1; i <= 20; i++) {
+        patterns.prompts.push(generateArticleXPath(i, 'prompt'));
+        patterns.responses.push(generateArticleXPath(i, 'response'));
+        patterns.imageResponses.push(generateArticleXPath(i, 'imageResponse'));
+        patterns.codeResponses.push(generateArticleXPath(i, 'codeResponse'));
+    }
+    
+    return patterns;
 }
 
 // Initialize

@@ -1,13 +1,66 @@
 // Cross-browser compatibility
 const browserAPI = window.chrome || window.browser;
 
-// Helper function to safely get text content
+// Platform-specific XPath patterns
+const PLATFORM_PATTERNS = {
+    chatgpt: {
+        basePattern: {
+            article: "/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article",
+            promptSuffix: "/div/div/div/div/div/div/div/div/div[1]",
+            responseSuffix: "/div/div/div[2]/div/div[1]/div/div/div"
+        },
+        imagePattern: {
+            container: "/div/div/div[2]/div/div[1]",
+            image: "/div[1]/div/div/div/div[2]/img",
+            text: "/div[2]/div/div"
+        },
+        codePattern: {
+            container: "/div/div/div[2]/div/div[1]/div/div/div",
+            preBlock: "/pre",
+            textBefore: "/text()[preceding-sibling::pre]",
+            textAfter: "/text()[following-sibling::pre]"
+        }
+    }
+};
+
+// Helper function to generate XPath for nth article
+function generateArticleXPath(n, type) {
+    const base = PLATFORM_PATTERNS.chatgpt.basePattern;
+    const articlePath = `${base.article}[${n}]`;
+    
+    if (type === 'prompt') {
+        return `${articlePath}${base.promptSuffix}`;
+    } else if (type === 'response') {
+        return {
+            container: `${articlePath}${base.responseSuffix}`,
+            hasImage: `${articlePath}${PLATFORM_PATTERNS.chatgpt.imagePattern.container}${PLATFORM_PATTERNS.chatgpt.imagePattern.image}`,
+            hasCode: `${articlePath}${base.responseSuffix}${PLATFORM_PATTERNS.chatgpt.codePattern.preBlock}`
+        };
+    } else if (type === 'imageResponse') {
+        const imgPattern = PLATFORM_PATTERNS.chatgpt.imagePattern;
+        return {
+            container: `${articlePath}${imgPattern.container}`,
+            image: `${articlePath}${imgPattern.container}${imgPattern.image}`,
+            text: `${articlePath}${imgPattern.container}${imgPattern.text}`
+        };
+    } else if (type === 'codeResponse') {
+        const codePattern = PLATFORM_PATTERNS.chatgpt.codePattern;
+        return {
+            container: `${articlePath}${codePattern.container}`,
+            preBlock: `${articlePath}${codePattern.container}${codePattern.preBlock}`,
+            textBefore: `${articlePath}${codePattern.container}${codePattern.textBefore}`,
+            textAfter: `${articlePath}${codePattern.container}${codePattern.textAfter}`
+        };
+    }
+    return null;
+}
+
+// Helper functions for DOM manipulation
 function getTextContent(element) {
     if (!element) return '';
     return element.textContent.trim();
 }
 
-// Helper function to get elements by XPath
 function getElementsByXPath(xpath) {
     try {
         const result = document.evaluate(
@@ -30,121 +83,88 @@ function getElementsByXPath(xpath) {
 }
 
 // Function to get chat data
-function getChatData(customPromptXPath, customResponseXPath) {
+function getChatData(settings) {
     try {
-        console.log('Getting chat data with XPath:', { customPromptXPath, customResponseXPath });
+        console.log('Getting chat data...');
         
-        let promptElements = [];
-        let responseElements = [];
-        
-        // Try custom XPath if provided
-        if (customPromptXPath && customResponseXPath) {
-            console.log('Using custom XPath selectors');
-            promptElements = getElementsByXPath(customPromptXPath);
-            responseElements = getElementsByXPath(customResponseXPath);
-            
-            console.log('Custom XPath results:', {
-                promptCount: promptElements.length,
-                responseCount: responseElements.length
-            });
-        }
-        
-        // If custom XPath failed or wasn't provided, try default patterns
-        if (promptElements.length === 0 || responseElements.length === 0) {
-            console.log('Trying default XPath patterns');
-            
-            // Default XPath patterns in order of specificity
-            const defaultPatterns = [
-                // Bing AI patterns
-                {
-                    prompt: "/html/body/div/main/div[2]/div/div/div[2]/div[2]/div[1]/div/div",
-                    response: "/html/body/div/main/div[2]/div/div/div[2]/div[2]/div[2]/div/p/span"
-                },
-                // Claude patterns
-                {
-                    prompt: "/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article/div/div/div/div/div/div/div/div/div[1]",
-                    response: "/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article/div/div/div[2]/div/div[1]/div/div/div"
-                },
-                // Generic class-based patterns
-                {
-                    prompt: "//div[contains(@class, 'conversation')]//div[contains(@class, 'user')]",
-                    response: "//div[contains(@class, 'conversation')]//div[contains(@class, 'assistant')]"
-                },
-                {
-                    prompt: "//main//article//div[contains(@class, 'prose')]",
-                    response: "//main//article//div[contains(@class, 'prose')]"
-                },
-                // Bing AI class-based patterns
-                {
-                    prompt: "//div[contains(@class, 'user-message')]",
-                    response: "//div[contains(@class, 'bot-message')]"
-                },
-                // Additional fallback patterns
-                {
-                    prompt: "//div[contains(@class, 'message')]//div[contains(@class, 'user')]",
-                    response: "//div[contains(@class, 'message')]//div[contains(@class, 'assistant')]"
-                }
-            ];
-            
-            // Try each pattern until we find matches
-            for (const pattern of defaultPatterns) {
-                console.log('Trying pattern:', pattern);
-                
-                promptElements = getElementsByXPath(pattern.prompt);
-                responseElements = getElementsByXPath(pattern.response);
-                
-                console.log('Pattern results:', {
-                    promptCount: promptElements.length,
-                    responseCount: responseElements.length
-                });
-                
-                if (promptElements.length > 0 && responseElements.length > 0) {
-                    console.log('Found matching elements with pattern:', pattern);
-                    break;
-                }
-            }
-        }
-        
-        console.log('Final element counts:', {
-            promptCount: promptElements.length,
-            responseCount: responseElements.length
-        });
-        
-        if (promptElements.length === 0 || responseElements.length === 0) {
-            console.log('No content found with any patterns');
-            return {
-                error: "No content found. Please check your XPath selectors or try a different pattern."
-            };
-        }
+        // Get all articles first to determine the conversation flow
+        const articles = getElementsByXPath("/html/body/div[1]/div[2]/main/div[1]/div[1]/div/div/div/div/article");
+        console.log(`Found ${articles.length} articles`);
 
         const chatData = {
             metadata: {
                 url: window.location.href,
                 timestamp: new Date().toISOString(),
-                total_pairs: Math.min(promptElements.length, responseElements.length)
+                total_pairs: 0
             },
             prompts: []
         };
 
-        // Get the minimum length to avoid index errors
-        const minLength = Math.min(promptElements.length, responseElements.length);
-        
-        for (let i = 0; i < minLength; i++) {
-            const promptText = getTextContent(promptElements[i]);
-            const responseText = getTextContent(responseElements[i]);
+        // Process articles in pairs (prompt + response)
+        for (let i = 0; i < articles.length - 1; i += 2) {
+            const promptArticle = articles[i];
+            const responseArticle = articles[i + 1];
+
+            if (!promptArticle || !responseArticle) continue;
+
+            // Get prompt text
+            const promptText = getTextContent(getElementsByXPath(generateArticleXPath(i + 1, 'prompt'))[0]);
             
-            if (promptText || responseText) {  // Only add if either prompt or response has content
-                console.log(`Processing pair ${i + 1}:`, {
-                    prompt: promptText.substring(0, 50) + (promptText.length > 50 ? '...' : ''),
-                    response: responseText.substring(0, 50) + (responseText.length > 50 ? '...' : '')
-                });
+            // Get response
+            const responseXPaths = generateArticleXPath(i + 2, 'response');
+            let responseText = '';
+            let imageUrl = '';
+            let codeBlocks = [];
+
+            // Check for image
+            const hasImage = getElementsByXPath(responseXPaths.hasImage)[0];
+            if (hasImage) {
+                // Handle response with image
+                const imageResponse = generateArticleXPath(i + 2, 'imageResponse');
+                const imgElement = getElementsByXPath(imageResponse.image)[0];
+                const textElement = getElementsByXPath(imageResponse.text)[0];
                 
+                if (imgElement) {
+                    imageUrl = imgElement.src;
+                }
+                if (textElement) {
+                    responseText = getTextContent(textElement);
+                }
+            } else {
+                // Check for code blocks
+                const hasCode = getElementsByXPath(responseXPaths.hasCode)[0];
+                if (hasCode) {
+                    // Handle response with code blocks
+                    const codeResponse = generateArticleXPath(i + 2, 'codeResponse');
+                    const preElements = getElementsByXPath(codeResponse.preBlock);
+                    const textBefore = getTextContent(getElementsByXPath(codeResponse.textBefore)[0]);
+                    const textAfter = getTextContent(getElementsByXPath(codeResponse.textAfter)[0]);
+
+                    // Collect all code blocks
+                    preElements.forEach(pre => {
+                        codeBlocks.push(getTextContent(pre));
+                    });
+
+                    // Combine text and code blocks
+                    responseText = [textBefore, ...codeBlocks, textAfter]
+                        .filter(text => text.trim())
+                        .join('\n\n');
+                } else {
+                    // Handle regular response
+                    responseText = getTextContent(getElementsByXPath(responseXPaths.container)[0]);
+                }
+            }
+
+            if (promptText || responseText) {
                 chatData.prompts.push({
-                    id: i + 1,
+                    id: (i / 2) + 1,
                     timestamp: new Date().toISOString(),
                     prompt: promptText,
-                    response: responseText
+                    response: responseText,
+                    ...(imageUrl && { image_url: imageUrl }),
+                    ...(codeBlocks.length > 0 && { code_blocks: codeBlocks })
                 });
+                chatData.metadata.total_pairs++;
             }
         }
 
@@ -168,31 +188,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Received message:', request);
     
     if (request.action === "getChatData") {
-        const chatData = getChatData(request.promptXPath, request.responseXPath);
+        const chatData = getChatData(request.settings);
         sendResponse(chatData);
-    } else if (request.action === "testXPath") {
-        try {
-            const promptElements = getElementsByXPath(request.promptXPath);
-            const responseElements = getElementsByXPath(request.responseXPath);
-            
-            const result = {
-                success: true,
-                promptCount: promptElements.length,
-                responseCount: responseElements.length,
-                promptPreview: promptElements.length > 0 ? getTextContent(promptElements[0]).substring(0, 100) : '',
-                responsePreview: responseElements.length > 0 ? getTextContent(responseElements[0]).substring(0, 100) : ''
-            };
-            
-            console.log('XPath test results:', result);
-            sendResponse(result);
-        } catch (error) {
-            console.error('Error testing XPath:', error);
-            sendResponse({
-                success: false,
-                error: error.message || "Failed to test XPath selectors"
-            });
-        }
     }
     
     return true; // Keep the message channel open for async response
 });
+
